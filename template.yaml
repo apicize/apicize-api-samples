@@ -1,0 +1,229 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  apicize-sample-api
+Transform:
+- AWS::Serverless-2016-10-31
+Parameters:
+  TokenTableName:
+    Type: String
+    Description: Name of dynamo api token table
+  QuoteTableName:
+    Type: String
+    Description: Name of dynamo api quotes table
+  CipherKey:
+    Type: String
+    Description: Cipher key used to encrypt keys
+  DomainName:
+    Type: String
+    Description: API domain name
+  CertificateArn:
+    Type: String
+    Description: Certificate ARN
+  Processor:
+    Type: String
+    Description: Processor type
+    AllowedValues:
+      - arm64
+      - x86_64
+    Default: x86_64
+# Resources declares the AWS resources that you want to include in the stack
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html
+Resources:
+  # Each Lambda function is defined by properties:
+  # https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+  ApicizeSampleApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: apicize-sample-image-api
+      BinaryMediaTypes:
+        - '*/*'
+      StageName: Prod
+      MethodSettings:
+        - HttpMethod: '*'
+          ResourcePath: '/*'
+          ThrottlingBurstLimit: 50
+          ThrottlingRateLimit: 5
+      Domain:
+        CertificateArn: !Ref CertificateArn
+        DomainName: !Ref DomainName
+        EndpointConfiguration: REGIONAL
+
+  ImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .dist/image
+      Handler: lambda.imageRotateHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - !Ref Processor
+      MemorySize: 256
+      Timeout: 30
+      Description: Example to rotate an image
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TokenTableName
+      Environment:
+        Variables:
+          TABLE_NAME_TOKENS: !Ref TokenTableName
+          CIPHER_KEY: !Ref CipherKey
+      Events:
+        ImageLeft:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /image/left
+            Method: POST
+            RequestModel:
+              Required: true
+              ValidateParameters: true
+            RequestParameters:
+              - method.request.header.authorization:
+                  Required: true
+                  Caching: false
+        ImageFlip:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /image/flip
+            Method: POST
+            RequestModel:
+              Required: true
+              ValidateParameters: true
+            RequestParameters:
+              - method.request.header.authorization:
+                  Required: true
+                  Caching: false
+        ImageRight:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /image/right
+            Method: POST
+            RequestModel:
+              Required: true
+              ValidateParameters: true
+            RequestParameters:
+              - method.request.header.authorization:
+                  Required: true
+                  Caching: false
+
+  IssueTokenFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .dist/issue-token
+      Handler: lambda.issueTokenHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - !Ref Processor
+      MemorySize: 128
+      Timeout: 5
+      Description: Issue API token
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TokenTableName
+      Environment:
+        Variables:
+          TABLE_NAME_TOKENS: !Ref TokenTableName
+          CIPHER_KEY: !Ref CipherKey
+      Events:
+        IssueKey:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /token
+            Method: POST
+
+  QuotesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .dist/quotes
+      Handler: lambda.quotesHandler
+      Runtime: nodejs20.x
+      Architectures:
+        - !Ref Processor
+      MemorySize: 128
+      Timeout: 10
+      Description: Manage quotes
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TokenTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref QuoteTableName
+      Environment:
+        Variables:
+          TABLE_NAME_TOKENS: !Ref TokenTableName
+          TABLE_NAME_QUOTES: !Ref QuoteTableName
+          CIPHER_KEY: !Ref CipherKey
+      Events:
+        GetQuote:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /quote/{id}
+            Method: GET
+        CreateQuote:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /quote
+            Method: POST
+        UpdateQuote:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /quote/{id}
+            Method: PUT
+        DeleteQuote:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /quote/{id}
+            Method: DELETE
+
+  # DynamoDB table to store API keys
+  ApiKeyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TokenTableName
+      AttributeDefinitions:
+        - AttributeName: Token
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: Token
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+      TimeToLiveSpecification:
+        AttributeName: TimeToLive
+        Enabled: true
+  QuotesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref QuoteTableName
+      AttributeDefinitions:
+        - AttributeName: Token
+          AttributeType: S
+        - AttributeName: ID
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: Token
+          KeyType: HASH
+        - AttributeName: ID
+          KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+      TimeToLiveSpecification:
+        AttributeName: TimeToLive
+        Enabled: true
+
+Outputs:
+  WebEndpoint:
+    Description: API Gateway endpoint URL for Prod stage
+    Value: !Sub "https://${ApicizeSampleApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    LoggingConfig:
+      LogFormat: JSON

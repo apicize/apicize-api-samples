@@ -1,0 +1,15 @@
+{
+    "name": "apicize-sample-api",
+    "description": "Apicize Sample API to demonstrate functionality",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "build-image": "esbuild --bundle ./src/image/image.mjs --minify --platform=node --target=es2020 --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --outfile=.dist/image/lambda.mjs",
+        "build-issue-token": "esbuild --bundle ./src/issue-token/issue-token.mjs --minify --platform=node --target=es2020 --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --outfile=.dist/issue-token/lambda.mjs",
+        "build-quotes": "esbuild --bundle ./src/quotes/quotes.mjs --minify --platform=node --target=es2020 --format=esm --banner:js=\"import { createRequire } from 'module'; const require = createRequire(import.meta.url);\" --outfile=.dist/quotes/lambda.mjs",
+        "build": "npm run build-image && npm run build-issue-token && npm run build-quotes && sam build",
+        "start": "npm run build && sam local start-api --warm-containers LAZY --env-vars env.local.json",
+        "debug": "npm run build && sam local start-api --warm-containers LAZY -d 5858 --env-vars env.local.json",
+        "deploy": "npm run build && sam deploy"
+    }
+}

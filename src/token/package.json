@@ -1,0 +1,11 @@
+{
+    "name": "apicize-sample-api-key",
+    "description": "Apicize Sample API to manage fake, completely insecure tokens",
+    "main": "key.mjs",
+    "version": "1.0.0",
+    "private": true,
+    "peerDependencies": {
+        "@aws-sdk/client-dynamodb": "^3.398.0",
+        "@aws-sdk/lib-dynamodb": "^3.398.0"
+    }
+}
