@@ -1,0 +1,9 @@
+node_modules
+.aws-sam
+.build
+.dist
+.vscode
+__tests__
+env.local.json
+samconfig.toml
+*.lock
