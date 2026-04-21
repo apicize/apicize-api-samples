@@ -67,7 +67,7 @@ export const imageRotateHandler = async (event) => {
         return {
             statusCode: 400,
             headers: {
-                'Content-Type': ctype
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 message: `${e}`

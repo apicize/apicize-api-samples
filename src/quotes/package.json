@@ -1,13 +1,14 @@
 {
-    "name": "apicize-sample-api",
+    "name": "apicize-sample-quotes",
     "description": "Apicize Sample API to demonstrate functionality",
+    "license": "none",
     "version": "1.0.0",
     "private": true,
     "dependencies": {
         "token": "../token"
     },
     "peerDependencies": {
-        "@aws-sdk/client-dynamodb": "^3.398.0",
-        "@aws-sdk/lib-dynamodb": "^3.398.0"
+        "@aws-sdk/client-dynamodb": "^3.1033.0",
+        "@aws-sdk/lib-dynamodb": "^3.1033.0"
     }
 }

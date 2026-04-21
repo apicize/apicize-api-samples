@@ -6,7 +6,7 @@ const tokenManagment = new FakeTokenManagement()
 
 const quotesTableName = process.env.TABLE_NAME_QUOTES ?? 'apicize-sample-quotes';
 
-const client = new DynamoDBClient({});
+const client = new DynamoDBClient({maxAttempts: 5});
 const ddbDocClient = DynamoDBDocumentClient.from(client);
 
 const getQuote = async (token, id) => {
@@ -58,7 +58,6 @@ const updateQuote = async (token, id, author, quote) => {
     if (expressions.length === 0) {
         throw new Error('Neither author nor quote were specified to update')
     }
-    console.log(`Attempting to update ID ${id}`)
     await ddbDocClient.send(new UpdateCommand({
         TableName: quotesTableName,
         Key: {
@@ -129,15 +128,18 @@ export const quotesHandler = async (event) => {
         }
         return {
             statusCode: 200,
-            body: JSON.stringify(resultPayload),
             headers: {
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify(resultPayload),
         }
     } catch (e) {
         if (e instanceof ConditionalCheckFailedException) {
             return {
                 statusCode: 404,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     message: 'Quote not found'
                 })
@@ -145,6 +147,9 @@ export const quotesHandler = async (event) => {
         } else {
             return {
                 statusCode: 400,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 body: JSON.stringify({
                     message: `${e}`
                 })

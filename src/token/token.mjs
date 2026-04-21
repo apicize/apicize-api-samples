@@ -2,7 +2,8 @@ import { DynamoDBClient } from '@aws-sdk/client-dynamodb'
 import { DynamoDBDocumentClient, GetCommand, PutCommand } from '@aws-sdk/lib-dynamodb'
 import { subtle, randomBytes, createHash, randomInt } from 'crypto'
 
-const ddbDocClient = DynamoDBDocumentClient.from(new DynamoDBClient({}))
+const client = new DynamoDBClient({maxAttempts: 5});
+const ddbDocClient = DynamoDBDocumentClient.from(client);
 
 const TOKEN_TIMEOUT_SECS = 600 // 10 min
 
@@ -16,8 +17,6 @@ export class FakeTokenManagement {
     constructor() {
         this.keyTableName = process.env['TABLE_NAME_TOKENS']
         this.cipherKeyBase64 = process.env['CIPHER_KEY']
-        console.log(`Key Table: ${this.keyTableName}`)
-        console.log(`Token: ${this.cipherKeyBase64}`)
     }
 
     async getEncryptionKey() {
@@ -107,7 +106,7 @@ export class FakeTokenManagement {
             await this.validateToken(encodedToken, result.Item.TimeToLive, requiredScope)
             return encodedToken
         } catch (e) {
-            throw new Error(`Unable to validate token - ${e}`)
+            throw new Error(`!!!! Unable to validate token - ${e}`)
         }
     }
 

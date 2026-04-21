@@ -53,7 +53,7 @@ Resources:
     Properties:
       CodeUri: .dist/image
       Handler: lambda.imageRotateHandler
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Architectures:
         - !Ref Processor
       MemorySize: 256
@@ -112,7 +112,7 @@ Resources:
     Properties:
       CodeUri: .dist/issue-token
       Handler: lambda.issueTokenHandler
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Architectures:
         - !Ref Processor
       MemorySize: 128
@@ -138,7 +138,7 @@ Resources:
     Properties:
       CodeUri: .dist/quotes
       Handler: lambda.quotesHandler
-      Runtime: nodejs20.x
+      Runtime: nodejs22.x
       Architectures:
         - !Ref Processor
       MemorySize: 128
@@ -180,9 +180,39 @@ Resources:
             Path: /quote/{id}
             Method: DELETE
 
+  CalcFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .dist/calc
+      Handler: lambda.calcHandler
+      Runtime: nodejs22.x
+      Architectures:
+        - !Ref Processor
+      MemorySize: 128
+      Timeout: 10
+      Description: Simple calculator
+      Environment:
+        Variables:
+          TABLE_NAME_TOKENS: !Ref TokenTableName
+          CIPHER_KEY: !Ref CipherKey
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref TokenTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref QuoteTableName
+      Events:
+        Calc:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApicizeSampleApi
+            Path: /calc
+            Method: POST
+
   # DynamoDB table to store API keys
   ApiKeyTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Ref TokenTableName
       AttributeDefinitions:
@@ -199,6 +229,8 @@ Resources:
         Enabled: true
   QuotesTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Retain
     Properties:
       TableName: !Ref QuoteTableName
       AttributeDefinitions:

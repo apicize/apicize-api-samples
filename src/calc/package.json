@@ -1,16 +1,14 @@
 {
-    "name": "apicize-sample-api-images",
+    "name": "apicize-sample-calc",
     "description": "Apicize Sample API to demonstrate functionality",
     "license": "MIT",
     "version": "1.0.0",
     "private": true,
     "dependencies": {
-        "jimp": "^1.6.0",
         "token": "../token"
     },
     "peerDependencies": {
         "@aws-sdk/client-dynamodb": "^3.1033.0",
         "@aws-sdk/lib-dynamodb": "^3.1033.0"
     }
-
 }

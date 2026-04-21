@@ -21,7 +21,7 @@ A minimial OAuth2-ish that issues tokens which expire in 10 minutes.  (note: thi
 
 If you are going to deploy this for yourself, refer to the [SAM template](./template.yaml) for parameters to configure.  
 
-To run locally, you can create an `env.local.json` with the following contents
+To run locally, you can create an `env.local.json` with the following contents (see `.env.example.json`)
 
 ```json
 {
@@ -41,15 +41,17 @@ To run locally, you can create an `env.local.json` with the following contents
 }
 ```
 
+Running `npm start` or `npm run debug` will start the SAM setup locally, including a local instance of DynamoDb.
+
 You can generate a cipher key using the following NodeJS code:
 
 ```js
     Buffer.from(await crypto.subtle.exportKey('raw', await crypto.subtle.generateKey({name: 'AES-CBC', length: 256},true,['encrypt','decrypt']))).toString('base64')
 ```
 
-NPM scripts are included to assist with running locally and deploying:
+Yarn scripts are included to assist with running locally and deploying:
 
 * **build**: builds all Lambda functions using **esbuild**
+* **deploy**: deploys services to Lambda (you will probaby want to run `sam deploy --guided` the firsd time to generate a `samconfig.toml` file)
 * **start**: launches services locally using AWS SAM
 * **debug**: launches services locally using AWS SAM with debug enabled
-* **deploy**: deploys services to Lambda (you will probaby want to run `sam deploy --guided` the firsd time to generate a `samconfig.toml` file)
